@@ -4,7 +4,7 @@
 shopt -s dotglob
 
 indent() {
-    sed -u 's/^/      /'
+  sed -u 's/^/      /'
 }
 
 BUILD_DIR="$1"
@@ -12,22 +12,19 @@ CACHE_DIR="$2"
 ENV_DIR="$3"
 STAGE="$(mktemp -d)"
 
-if [ ! -f "${ENV_DIR}/APP_BASE" ]; then
-    echo "APP_BASE was not set. Aborting" | indent
-    exit 1
-fi
-APP_BASE="$(cat "${ENV_DIR}/APP_BASE")"
-
 (
-    mv "${BUILD_DIR}/${APP_BASE}" "${STAGE}" &&
-    rm -rf "${BUILD_DIR}"/* &&
-    mv "${STAGE}/$(basename "$APP_BASE")"/* "${BUILD_DIR}"
+  mv "${BUILD_DIR}/services" "${STAGE}" &&
+  rm -rf "${BUILD_DIR}"/* &&
+  mkdir -p "${BUILD_DIR}/services/api" &&
+  mv "${STAGE}/services/admin"/* "${BUILD_DIR}" &&
+  mv "${STAGE}/services/api" "${BUILD_DIR}/services/" &&
+  sed -i "s/path: '..\/api/path: 'services\/api/g" "${BUILD_DIR}/Gemfile" &&
+  sed -i "s/remote: ..\/api/remote: services\/api/g" "${BUILD_DIR}/Gemfile.lock"
 )
 
 if [ $? -ne 0 ]; then
-    echo "FAILED to copy directory into place" | indent
-    exit 1
+  echo "FAILED to copy directory into place" | indent
+  exit 1
 fi
 
-echo "Copied ${APP_BASE} to root of app successfully" | indent
-
+echo "Setup sush-admin app successfully" | indent
